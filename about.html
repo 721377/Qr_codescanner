@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+</head>
+<body>
+    <h1>QR Code Scanner</h1>
+    <div>
+        <video id="qr-video" width="300" height="300" style="border: 1px solid black;"></video>
+        <canvas id="qr-canvas" width="300" height="300" style="display: none;"></canvas>
+    </div>
+    <div id="qr-content" style="display: none;">
+        <h2>Scanned QR Code Content:</h2>
+        <p id="qr-content-text"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.0.0/dist/jsQR.min.js"></script>
+    <script>
+        // Function to handle camera access and QR code scanning
+        function accessCameraAndScan() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    /* User has granted access to the camera */
+                    console.log('Camera access granted');
+
+                    // Get the video element and start the camera stream
+                    const videoElement = document.getElementById('qr-video');
+                    videoElement.srcObject = stream;
+                    videoElement.play();
+
+                    // Create a canvas element to capture video frames
+                    const canvasElement = document.getElementById('qr-canvas');
+                    const canvasContext = canvasElement.getContext('2d');
+
+                    // Get the QR code content element
+                    const qrContentElement = document.getElementById('qr-content');
+                    const qrContentTextElement = document.getElementById('qr-content-text');
+
+                    // Function to continuously scan for QR codes
+                    function scanQRCode() {
+                        canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                        const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                            inversionAttempts: 'dontInvert',
+                        });
+
+                        if (code) {
+                            console.log('QR Code detected:', code.data);
+                            // Display the content of the scanned QR code
+                            qrContentTextElement.textContent = code.data;
+                            qrContentElement.style.display = 'block';
+                        }
+
+                        requestAnimationFrame(scanQRCode);
+                    }
+
+                    // Start scanning for QR codes
+                    scanQRCode();
+                })
+                .catch(function(err) {
+                    /* User has denied access to the camera or an error occurred */
+                    console.error('Error accessing camera:', err);
+                    alert('Error accessing camera: ' + err.message);
+                });
+        }
+
+        // Call the accessCameraAndScan function when the page loads
+        window.onload = function() {
+            accessCameraAndScan();
+        };
+    </script>
+</body>
+</html>
